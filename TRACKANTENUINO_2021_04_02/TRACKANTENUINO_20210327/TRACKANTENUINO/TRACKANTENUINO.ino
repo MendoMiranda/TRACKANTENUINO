@@ -5,8 +5,9 @@ O sistema destina-se a efectuar o tracking de sondas espaciais e objectos celest
 Imprimem-se os dados em txt em ficheiros com o nome dos objectos.
 O sistema lê o ficheiro verifica se a data está correcta ( se não estiver fica tudo nulo).
 Caso esteja correcta, começa o loop de informação da hora real UTC e do Azimute/Elevação em que está a antena.
-A cada 5 minutos compara a hora real com as do ficheiro se for igual, lê o azimute e a elevação respectiva.
-Depois, compara estes valores com o Azimute e a Elevação anteriores para decidir o movimento CCW ou CW dos respectivos motores.
+A cada minuto compara a hora real com as do ficheiro se for igual, lê o azimute e a elevação respectiva.
+Depois, compara estes valores com o Azimute e a Elevação anteriores para decidir o movimento CCW ou CW dos
+respectivos motores.
 ***************************************************************************************************************************
 A pinagem utilizada no Arduino é a seguinte:
 Pino 11 digital OUTPUT: comando CCW do motor da Elevação
@@ -17,31 +18,45 @@ Pino 7 digital INPUT_PULLUP: sensor de fim de curso da Elevação
 Pino 6 digital INPUT_PULLUP: sensor de início de curso da Elevação
 Pino 5 digital INPUT_PULLUP: sensor de fim de curso do Azimute
 Pino 3 digital INPUT_PULLUP: sensor de início de curso do Azimute
-Pino 4 digital INPUT_PULLUP: Clicks do Botão Menu (3 opções: click simples, duplo click ou pressão longa 3 segundos)
+Pino 13 digital INPUT_PULLUP: Clicks do Botão Menu (3 opções: click simples, duplo click ou pressão longa 3 segundos)
 Pino SPI-1 (pintinha) digital MISO de comunicação com o SD CARD. SPI-2 +Vcc. Esta ficha está no meio do ARDUINO DUE
 Pino SPI-4 digital MOSI de comunicação SPI com o SD CARD. SOI-5 RESET e SPI-6 GND
 Pino SPI-3 digital SLC de comunicação SPI com o SD CARD
-Pino 2 digital CS (Chip select) de comunicação SPI com o SD CARD
-Pino A4 analógico SDA para comunicações I2C Relogio RTC DS1307 e do LCD (O LCD usa um interface I2C para usar aoenas 2 pinos. Caso contrário seriam necessários 7 pinos e inviabilizava o projecto
-Pino A5 analógico SCL para comunicações I2C Relogio RTC DS1307 e do LCD
+Pino 4 digital CS (Chip select) de comunicação SPI com o SD CARD
+Pino A4 analógico SDA para comunicações I2C Relógio RTC DS1307 e com o I2C LCD 
+Pino A5 analógico SCL para comunicações I2C Relógio RTC DS1307 e com o I2C LCD
 Pino A0 analógico INPUT para análise da tensão do potenciómetro dos azimutes
 Pino A1 analógico INPUT para análise da tensão do potenciómetro das elevações
+Nota 1 : A versão do Arduino DUE Programing Port utilizada arranca (autostart) quando se liga a alimentação. 
+Para resolver este problema, coloca-se um resistência de 10 K entre a linha Erase e os 3,3V junto ao Fet T3. 
+Assim, ao ligar a corrente o ARDUINO DUE arranca. Ver no site: https://forum.arduino.cc/index.php?topic=256771.60
+Nota2 : Têm de ser colocadas resistências de PullUp exteriores de 5K para estabilizar as entradas digitais dos pinos 3,5,6,7 e 13, porque as resistências internas de PullUp do ARDUINO DUE são de 50K. que provocam instabilidade e erros provocados por ruído externo nomeadamente de corrente alterna. 
+
 ********************************************************************************
 *Estrutura e funcionamento
 *Ao ligar correm as Definições e o setup(),
-*O software no setup(), vai ler a Data a Hora e o dia na função DataHoraRTC() seguidamente ainda no setup(), vai comparar as datas Ano,Mês,dia do cartão com a real do RTC. 
-*usando como arranque a leitura da data do ficheiro SOL.txt definido no dentro do setup()como inicio A função que faz esta operação é a lerSOL_Data().
-*Nesta função, no fim de lidas e registadas regressa ao setup() que faz executar o comparaDatas() Comparando as datas e, se forem iduais, vai ler as Directorias dos ficheiros todos do SDCard 
-*com através da função * lerDIRECTORIA_SD (File dir, int numTabs)  Depois de lidas as directoria e armazenadas em Strings A,B,C,D,E,F,G,H fica preparado o menu para a escolhe do ficheiro a abrir. 
-*Seguidament faz-se : SONDAS com sondastr = "Click para abrir" que aparecerá no LCD. Ao clicar para abrir com a função sondas() escolhe-se o ficheiro do objecto que se pretende seguir 
-* ao definir essa escolha, carregam-se no buffer Data(u) os dados todos do objecto em causa numa matriz que irá ser acessada criteriosamente.
-* Inicia-se então o Loop com o objecto seleccionado onde a cada 5 minutos o TRACKANTENUINO verifica se a  Hora e os Minutos reais se encontram no ficheiro respectivo. 
-* Se existir a condição HORAS=HORASSD e MINUTOS=MINUTOSSD vão ser lidos o AzNovo e a ELNovo respectivos através da função lerHM_AZ_EL (). 
-* Estes dados ficam disponíveis para processamento do movimento da antena. Durante os 5 minutos de intervalo de leitura de dados, o LCD vai informando a Data/Hora UTC o azimute e a elevação para onde 
-* está orientada a antena ou se estiver em movimento,para onde se está a deslocar a antena.
-*
+*O software no setup(), vai ler a Data a Hora e o dia na função DataHoraRTC() seguidamente ainda no setup(), vai comparar 
+as datas Ano,Mês,dia do cartão com a real do RTC. 
+*usando como arranque a leitura da data do ficheiro SOL.txt definido no dentro do setup()como inicio A função que faz esta 
+operação é a lerSOL_Data().
+*Nesta função, no fim de lidas e registadas regressa ao setup() que faz executar o comparaDatas() Comparando as datas e, se 
+forem iduais, vai ler as Directorias dos ficheiros todos do SDCard 
+*com através da função * lerDIRECTORIA_SD (File dir, int numTabs)  Depois de lidas as directoria e armazenadas em Strings 
+A,B,C,D,E,F,G,H fica preparado o menu para a escolhe do ficheiro a abrir. 
+*Seguidamente faz-se : SONDAS com sondastr = "Click para abrir" que aparecerá no LCD. Ao clicar para abrir com a função sondas() 
+escolhe-se o ficheiro do objecto que se pretende seguir 
+* ao definir essa escolha, carregam-se no buffer Data(u) os dados todos do objecto em causa numa matriz que irá ser acessada. 
+criteriosamente.
+*Inicia-se então o Loop com o objecto seleccionado onde a cada 5 minutos o TRACKANTENUINO verifica se a  Hora e os Minutos reais 
+se encontram no ficheiro respectivo. 
+*Se existir a condição HORAS=HORASSD e MINUTOS=MINUTOSSD vão ser lidos o AzNovo e a ELNovo respectivos através da função 
+lerHM_AZ_EL (). 
+*Estes dados ficam disponíveis para processamento do movimento da antena. Durante os 5 minutos de intervalo de leitura de 
+dados, o LCD vai informando a Data/Hora UTC o azimute e a elevação para onde 
+*está orientada a antena ou se estiver em movimento, para onde se está a deslocar a antena.
 *
 */
+
 
 #include <math.h>
 #include <Wire.h>
